@@ -4,57 +4,83 @@ from constants import DB_FILE, DB_TABLE
 
 
 def get_data(query: str):
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        result = []
+    '''
+    Функция возвращает весь список названиев фильмов
+    '''
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            result = []
 
-        for i in cursor.execute(query).fetchall():
-            result.append(dict(i))
+            for i in cursor.execute(query).fetchall():
+                result.append(dict(i))
 
-        return result
+            return result
+    except Exception as e:
+        print(f"Ошибка {e}")
+        return []
 
 
 def get_movies(start_year, end_year):
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.row_factory = sqlite3.Row
+    '''
+    Функция возвращает название и год выпуска, отсортированных по дате выпуска
+    '''
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            result = []
+            query = f"""
+            SELECT title, release_year
+            FROM {DB_TABLE}
+            WHERE release_year between {start_year} AND {end_year}
+            LIMIT 100
+            """
+
+            for i in conn.execute(query).fetchall():
+                result.append(dict(i))
+
+            return result
+
+    except Exception as e:
+        print(f"Ошибка {e}")
+        return []
+
+
+def get_movie_rating(rating):
+    '''
+    Функция возвращает название фильмов по возрасту
+    '''
+    try:
+        trans_rating = {
+            'children': ('G', 'G'),
+            'family': ('G', 'PG', 'PG-13'),
+            'adult': ('R', 'NC-17')
+        }
+        with sqlite3.connect(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+
         result = []
         query = f"""
-        SELECT title, release_year
-        FROM {DB_TABLE}
-        WHERE release_year between {start_year} AND {end_year}
-        LIMIT 100
-        """
+                SELECT title, rating, description
+                FROM {DB_TABLE}
+                WHERE rating in {trans_rating[rating]}
+                """
 
         for i in conn.execute(query).fetchall():
             result.append(dict(i))
 
         return result
-
-
-def get_movie_rating(rating):
-    trans_rating = {
-        'children': ('G', 'G'),
-        'family': ('G', 'PG', 'PG-13'),
-        'adult': ('R', 'NC-17')
-    }
-    with sqlite3.connect(DB_FILE) as conn:
-        conn.row_factory = sqlite3.Row
-
-    result = []
-    query = f"""
-            SELECT title, rating, description
-            FROM {DB_TABLE}
-            WHERE rating in {trans_rating[rating]}
-            """
-
-    for i in conn.execute(query).fetchall():
-        result.append(dict(i))
-
-    return result
+    except Exception as e:
+        print(f"Такого возвраста нет {e}")
+        return []
 
 
 def get_movie_desc(genre):
+    '''
+    Функция возвращает название фильмов по жанру
+    '''
+
     with sqlite3.connect(DB_FILE) as conn:
         conn.row_factory = sqlite3.Row
         result = []
@@ -73,6 +99,10 @@ def get_movie_desc(genre):
 
 
 def get_all_actor(one_actor, two_actor):
+    '''
+    Функция возвращает список актеров
+    '''
+
     with sqlite3.connect(DB_FILE) as conn:
         conn.row_factory = sqlite3.Row
         result = []
@@ -90,6 +120,10 @@ def get_all_actor(one_actor, two_actor):
 
 
 def get_play_actor(one_actor, two_actor):
+    '''
+    Функция возвращает список актеров тех, кто играет с ними в паре больше 2 раз.
+    '''
+
     data = get_all_actor(one_actor, two_actor)
     counter = {}
     result_counter = []
@@ -108,6 +142,10 @@ def get_play_actor(one_actor, two_actor):
 
 
 def get_movie_description(type, release_year, listed_in):
+    '''
+    Функция возвращает  список названий картин с их описаниями в JSON.
+    '''
+
     with sqlite3.connect(DB_FILE) as conn:
         conn.row_factory = sqlite3.Row
         result = []
@@ -123,5 +161,3 @@ def get_movie_description(type, release_year, listed_in):
             result.append(dict(i))
     return result
 
-
-print(get_movie_desc("Comedy"))
